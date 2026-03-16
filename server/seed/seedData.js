@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const Product = require('../models/Product');
 const User = require('../models/User');
 require('dotenv').config();
@@ -12,71 +13,79 @@ const seedData = async () => {
     await Product.deleteMany({});
     await User.deleteMany({});
 
-    // Create admin user
+    // Create admin user (password will be hashed by pre-save hook)
     const adminUser = new User({
-      name: 'Admin User',
+      name: 'Admin',
       email: 'admin@frozen.com',
-      password: 'Admin@123',
-      role: 'admin'
+      password: 'Admin@123', // Plain text - will be hashed by pre-save hook
+      role: 'admin',
+      authProvider: 'local',
+      isEmailVerified: true
     });
     await adminUser.save();
     console.log('Admin user created');
 
-    // Create ice cream products
+    // Create ice cream products with placeholder images from picsum.photos
     const products = [
       {
-        name: 'Vanilla Cone',
+        name: 'Mango Delight',
         category: 'cone',
-        flavor: 'Vanilla',
-        size: 'small',
-        price: 50,
-        stock: 100,
-        image: 'vanilla-cone.jpg'
-      },
-      {
-        name: 'Chocolate Cup',
-        category: 'cup',
-        flavor: 'Chocolate',
-        size: 'medium',
-        price: 80,
-        stock: 75,
-        image: 'chocolate-cup.jpg'
-      },
-      {
-        name: 'Strawberry Family Pack',
-        category: 'family pack',
-        flavor: 'Strawberry',
-        size: 'large',
-        price: 250,
-        stock: 30,
-        image: 'strawberry-family.jpg'
-      },
-      {
-        name: 'Mango Combo',
-        category: 'combo',
         flavor: 'Mango',
         size: 'medium',
-        price: 150,
-        stock: 50,
-        image: 'mango-combo.jpg'
-      },
-      {
-        name: 'Butterscotch Cone',
-        category: 'cone',
-        flavor: 'Butterscotch',
-        size: 'small',
         price: 60,
-        stock: 80,
-        image: 'butterscotch-cone.jpg'
+        stock: 25,
+        available: true,
+        image: 'https://picsum.photos/seed/mango/400/400'
       },
       {
-        name: 'Mint Chocolate Cup',
+        name: 'Choco Blast',
         category: 'cup',
-        flavor: 'Mint Chocolate',
+        flavor: 'Chocolate',
         size: 'large',
-        price: 120,
-        stock: 40,
-        image: 'mint-chocolate-cup.jpg'
+        price: 80,
+        stock: 15,
+        available: true,
+        image: 'https://picsum.photos/seed/choco/400/400'
+      },
+      {
+        name: 'Strawberry Swirl',
+        category: 'cone',
+        flavor: 'Strawberry',
+        size: 'small',
+        price: 40,
+        stock: 30,
+        available: true,
+        image: 'https://picsum.photos/seed/strawberry/400/400'
+      },
+      {
+        name: 'Family Vanilla Pack',
+        category: 'family pack',
+        flavor: 'Vanilla',
+        size: 'large',
+        price: 220,
+        stock: 8,
+        available: true,
+        image: 'https://picsum.photos/seed/vanilla/400/400'
+      },
+      {
+        name: 'Rainbow Combo',
+        category: 'combo',
+        flavor: 'Mixed',
+        size: 'medium',
+        price: 150,
+        stock: 12,
+        available: true,
+        image: 'https://picsum.photos/seed/rainbow/400/400'
+      },
+      {
+        name: 'Butterscotch Cup',
+        category: 'cup',
+        flavor: 'Butterscotch',
+        size: 'medium',
+        price: 70,
+        stock: 20,
+        available: true,
+        image: 'https://picsum.photos/seed/butterscotch/400/400'
       }
     ];
 

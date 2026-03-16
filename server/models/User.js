@@ -32,6 +32,10 @@ const userSchema = new mongoose.Schema({
     enum: ['local', 'google'],
     default: 'local'
   },
+  profileImage: {
+    type: String,
+    default: null
+  },
   isEmailVerified: {
     type: Boolean,
     default: false

@@ -93,6 +93,16 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
+      
+      // Handle 403 (email not verified) specially
+      if (error.response?.status === 403) {
+        return { 
+          success: false, 
+          message: message,
+          needsVerification: true 
+        };
+      }
+      
       dispatch({ type: 'AUTH_ERROR', payload: message });
       return { success: false, message };
     }
@@ -101,17 +111,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      const { user, token } = response.data.data;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Registration should NOT return user/token - only success message
+      // User is created but needs email verification before login
       
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: { user, token },
-      });
-      
-      return { success: true };
+      return { 
+        success: true, 
+        message: response.data.message || 'Registration successful! Please check your email for verification.'
+      };
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed';
       dispatch({ type: 'AUTH_ERROR', payload: message });

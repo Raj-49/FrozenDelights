@@ -27,6 +27,7 @@ passport.use(new GoogleStrategy({
         user.googleId = profile.id;
         user.authProvider = 'google';
         user.isEmailVerified = true;
+        user.profileImage = profile.photos[0]?.value || user.profileImage;
         await user.save();
       }
       return done(null, user);
@@ -39,7 +40,8 @@ passport.use(new GoogleStrategy({
       googleId: profile.id,
       authProvider: 'google',
       isEmailVerified: true,
-      role: 'user'
+      role: 'user',
+      profileImage: profile.photos[0]?.value || null
     });
 
     await user.save();
