@@ -8,7 +8,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
 // Import pages
-import Home from './pages/Home';
+import Home from './pages/user/Home';
 import Menu from './pages/Menu';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
