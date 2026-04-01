@@ -18,6 +18,8 @@ import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import Profile from './pages/Profile';
 import ResetPassword from './pages/auth/ResetPassword';
+import VerifyEmail from './pages/auth/VerifyEmail';
+import GoogleSuccess from './pages/auth/GoogleSuccess';
 import AdminLogin from './pages/admin/AdminLogin';
 
 // Route Guards
@@ -35,6 +37,7 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
+              <Route path="/menu" element={<Menu />} />
               <Route path="/verify-email/:token" element={<VerifyEmail />} />
               <Route path="/auth/google/success" element={<GoogleSuccess />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -58,17 +61,17 @@ function App() {
               {/* Protected Routes (any logged in user) */}
               <Route path="/cart" element={
                 <ProtectedRoute>
-                  <div><h1>Cart Page</h1></div>
+                  <Cart />
                 </ProtectedRoute>
               } />
               <Route path="/checkout" element={
                 <ProtectedRoute>
-                  <div><h1>Checkout Page</h1></div>
+                  <Checkout />
                 </ProtectedRoute>
               } />
               <Route path="/order/:id/success" element={
                 <ProtectedRoute>
-                  <div><h1>Order Success Page</h1></div>
+                  <OrderSuccess />
                 </ProtectedRoute>
               } />
               <Route path="/order/:id/track" element={
@@ -114,6 +117,7 @@ function App() {
                 </AdminRoute>
               } />
             </Routes>
+            <Footer />
           </div>
         </Router>
       </CartProvider>

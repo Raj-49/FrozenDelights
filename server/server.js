@@ -11,9 +11,6 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
-const testRoutes = require('./routes/testRoutes');
-const testRoutesFresh = require('./routes/testRoutesFresh');
-const debugRoutes = require('./routes/debugRoutes');
 
 // Connect to database
 connectDB();
@@ -31,9 +28,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
-app.use('/api/test', testRoutes);
-app.use('/api/test-fresh', testRoutesFresh);
-app.use('/api/debug', debugRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
