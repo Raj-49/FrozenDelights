@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -20,7 +20,14 @@ import Profile from './pages/Profile';
 import ResetPassword from './pages/auth/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import GoogleSuccess from './pages/auth/GoogleSuccess';
-import AdminLogin from './pages/admin/AdminLogin';
+const MyOrders = lazy(() => import('./pages/MyOrders'));
+const TrackOrder = lazy(() => import('./pages/TrackOrder'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 
 // Route Guards
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -28,6 +35,14 @@ import GuestRoute from './routes/GuestRoute';
 import AdminRoute from './routes/AdminRoute';
 
 function App() {
+  const fallback = (
+    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+      <div className="spinner-border" role="status">
+        <span className="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  );
+
   return (
     <AuthProvider>
       <CartProvider>
@@ -56,7 +71,7 @@ function App() {
               } />
               
               {/* Admin Login (special handling) */}
-              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/login" element={<Suspense fallback={fallback}><AdminLogin /></Suspense>} />
               
               {/* Protected Routes (any logged in user) */}
               <Route path="/cart" element={
@@ -76,12 +91,23 @@ function App() {
               } />
               <Route path="/order/:id/track" element={
                 <ProtectedRoute>
-                  <div><h1>Track Order Page</h1></div>
+                  <Suspense fallback={fallback}>
+                    <TrackOrder />
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path="/my-orders" element={
                 <ProtectedRoute>
-                  <div><h1>My Orders Page</h1></div>
+                  <Suspense fallback={fallback}>
+                    <MyOrders />
+                  </Suspense>
+                </ProtectedRoute>
+              } />
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <Suspense fallback={fallback}>
+                    <Notifications />
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
@@ -93,17 +119,30 @@ function App() {
               {/* Admin Routes (admin only) */}
               <Route path="/admin" element={
                 <AdminRoute>
-                  <div><h1>Admin Dashboard</h1></div>
+                  <Suspense fallback={fallback}>
+                    <AdminDashboard />
+                  </Suspense>
                 </AdminRoute>
               } />
               <Route path="/admin/products" element={
                 <AdminRoute>
-                  <div><h1>Admin Products</h1></div>
+                  <Suspense fallback={fallback}>
+                    <AdminProducts />
+                  </Suspense>
                 </AdminRoute>
               } />
               <Route path="/admin/orders" element={
                 <AdminRoute>
-                  <div><h1>Admin Orders</h1></div>
+                  <Suspense fallback={fallback}>
+                    <AdminOrders />
+                  </Suspense>
+                </AdminRoute>
+              } />
+              <Route path="/admin/coupons" element={
+                <AdminRoute>
+                  <Suspense fallback={fallback}>
+                    <AdminCoupons />
+                  </Suspense>
                 </AdminRoute>
               } />
               <Route path="/admin/billing" element={

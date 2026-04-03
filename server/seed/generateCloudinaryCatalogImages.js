@@ -1,22 +1,10 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
-const User = require('../models/User');
 const Product = require('../models/Product');
-require('dotenv').config();
 const { cloudinary } = require('../config/cloudinary');
 
-const DEFAULT_IMAGE = 'https://loremflickr.com/1200/900/icecream,dessert?lock=9090';
-const CATEGORIES = ['cone', 'cup', 'family pack', 'combo'];
-const SIZES = ['small', 'medium', 'large'];
-const FLAVORS = [
-  'Vanilla Bean', 'Dark Chocolate', 'Strawberry Cream', 'Mango Burst', 'Blueberry Cheesecake',
-  'Pistachio Almond', 'Butterscotch', 'Salted Caramel', 'Mocha Fudge', 'Mint Choco Chip',
-  'Black Currant', 'Lychee Rose', 'Tender Coconut', 'Hazelnut Crunch', 'Cookie Dough'
-];
-const ADJECTIVES = [
-  'Royal', 'Silky', 'Creamy', 'Crunchy', 'Velvet', 'Classic', 'Premium', 'Golden',
-  'Signature', 'Deluxe', 'Fresh', 'Dreamy', 'Chilled', 'Fluffy', 'Rich'
-];
-const NOUNS = ['Swirl', 'Roll', 'Bliss', 'Fusion', 'Scoop', 'Treat', 'Delight', 'Parfait', 'Twist', 'Sensation'];
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const COLOR_PALETTES = [
   ['#fff3d6', '#ffd18a', '#ff9f6e', '#ff6f91'],
@@ -115,91 +103,54 @@ const uploadSvgToCloudinary = async (svgMarkup, publicId) => {
   return uploaded.secure_url || uploaded.url;
 };
 
-const buildProducts = (count = 120) => {
-  const products = [];
+const generateCloudinaryCatalogImages = async () => {
+  const hasCloudinaryConfig = Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME
+    && process.env.CLOUDINARY_API_KEY
+    && process.env.CLOUDINARY_API_SECRET
+  );
 
-  for (let index = 0; index < count; index += 1) {
-    const flavor = FLAVORS[index % FLAVORS.length];
-    const adjective = ADJECTIVES[index % ADJECTIVES.length];
-    const noun = NOUNS[index % NOUNS.length];
-    const category = CATEGORIES[index % CATEGORIES.length];
-    const size = SIZES[index % SIZES.length];
-    const basePrice = 69 + (index % 12) * 7;
-    const stock = 8 + (index % 35);
-    const productName = `${adjective} ${flavor} ${noun}`;
-    products.push({
-      name: productName,
-      category,
-      flavor,
-      size,
-      description: `${flavor} crafted as a ${category} special with creamy texture and balanced sweetness, perfect for ${size} cravings.`,
-      price: basePrice,
-      stock,
-      images: [DEFAULT_IMAGE],
-      image: DEFAULT_IMAGE,
-      available: true
-    });
+  if (!hasCloudinaryConfig) {
+    console.error('Cloudinary credentials are missing in environment.');
+    process.exit(1);
   }
 
-  return products;
-};
-
-const seedData = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB for seeding');
+    console.log('Connected to MongoDB for Cloudinary generation');
 
-    await User.deleteMany({});
-    await Product.deleteMany({});
+    const products = await Product.find({}).sort({ createdAt: 1 });
+    console.log(`Products found: ${products.length}`);
 
-    const adminUser = new User({
-      name: 'Raj Patel',
-      email: (process.env.ADMIN_EMAIL || 'shopfrozendelights@gmail.com').toLowerCase(),
-      role: 'admin',
-      authProvider: 'google',
-      googleId: null,
-      isEmailVerified: true
-    });
+    let updatedCount = 0;
 
-    await adminUser.save();
+    for (let index = 0; index < products.length; index += 1) {
+      const product = products[index];
+      const svg = createDessertSvg(product, index + 1);
+      const publicId = `catalog_${product._id}_generated_primary`;
+      const cloudinaryUrl = await uploadSvgToCloudinary(svg, publicId);
 
-    const hasCloudinaryConfig = Boolean(
-      process.env.CLOUDINARY_CLOUD_NAME
-      && process.env.CLOUDINARY_API_KEY
-      && process.env.CLOUDINARY_API_SECRET
-    );
-
-    const products = buildProducts(120);
-
-    const insertedProducts = await Product.insertMany(products);
-
-    if (hasCloudinaryConfig) {
-      for (let index = 0; index < insertedProducts.length; index += 1) {
-        const product = insertedProducts[index];
-        const svg = createDessertSvg(product, index + 1);
-        const publicId = `catalog_${product._id}_generated_primary`;
-        const cloudinaryUrl = await uploadSvgToCloudinary(svg, publicId);
-
-        await Product.updateOne(
-          { _id: product._id },
-          {
-            $set: {
-              images: [cloudinaryUrl],
-              image: cloudinaryUrl
-            }
+      await Product.updateOne(
+        { _id: product._id },
+        {
+          $set: {
+            images: [cloudinaryUrl],
+            image: cloudinaryUrl
           }
-        );
-      }
+        }
+      );
+      updatedCount += 1;
+
+      console.log(`[${index + 1}/${products.length}] Updated ${product.name}`);
+      await wait(150);
     }
 
-    console.log('Default Google admin user created');
-    console.log(`Seeded ${products.length} products with Cloudinary primary images`);
-    console.log('Seeding completed!');
+    console.log(`Generation completed. Products updated: ${updatedCount}`);
     process.exit(0);
   } catch (error) {
-    console.error('Seeding error:', error);
+    console.error('Generation failed:', error);
     process.exit(1);
   }
 };
 
-seedData();
+generateCloudinaryCatalogImages();

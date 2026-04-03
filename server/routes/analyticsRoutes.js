@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('../middleware/authMiddleware');
+const { requireAdmin } = require('../middleware/adminMiddleware');
+const {
+	getSalesAnalytics,
+	getOrderAnalytics,
+	getProductAnalytics,
+	getRevenueAnalytics
+} = require('../controllers/analyticsController');
 
-// Analytics routes will be implemented here
-// GET /api/analytics/sales
-// GET /api/analytics/products
-// GET /api/analytics/orders
-// GET /api/analytics/revenue
+router.get('/sales', verifyToken, requireAdmin, getSalesAnalytics);
+router.get('/products', verifyToken, requireAdmin, getProductAnalytics);
+router.get('/orders', verifyToken, requireAdmin, getOrderAnalytics);
+router.get('/revenue', verifyToken, requireAdmin, getRevenueAnalytics);
 
 module.exports = router;

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Alert, Spinner, Form } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [profileData, setProfileData] = useState(null);
+  const [profileImageError, setProfileImageError] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -16,8 +19,18 @@ const Profile = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    setProfileImageError(false);
+  }, [profileData?.profileImage, profileData?.name]);
+
   const getProfileImage = () => {
-    if (profileData?.profileImage) {
+    const rawImage = profileData?.profileImage;
+    const hasValidRemoteImage = typeof rawImage === 'string'
+      && rawImage.trim() !== ''
+      && rawImage !== 'null'
+      && rawImage !== 'undefined';
+
+    if (hasValidRemoteImage && !profileImageError) {
       return profileData.profileImage;
     }
     
@@ -52,6 +65,40 @@ const Profile = () => {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleProfileImageUpload = async () => {
+    if (!profileImageFile) {
+      setError('Please select an image first.');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setError('');
+      setSuccess('');
+
+      const payload = new FormData();
+      payload.append('image', profileImageFile);
+
+      const response = await api.patch('/auth/profile-image', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      const updatedUser = response.data?.data;
+      if (updatedUser) {
+        setProfileData(updatedUser);
+        updateUser(updatedUser);
+      }
+
+      setProfileImageError(false);
+      setProfileImageFile(null);
+      setSuccess('Profile picture updated successfully.');
+    } catch (apiError) {
+      setError(apiError.response?.data?.message || 'Failed to update profile picture.');
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   if (!user) {
@@ -97,6 +144,7 @@ const Profile = () => {
                     <img
                       src={getProfileImage()}
                       alt="Profile"
+                      onError={() => setProfileImageError(true)}
                       className="rounded-circle"
                       style={{
                         width: '128px',
@@ -145,6 +193,25 @@ const Profile = () => {
               </Row>
 
               <hr className="my-4" />
+
+              <div className="mb-4 p-3 border rounded bg-light">
+                <h6 className="mb-3">📷 Change Profile Picture</h6>
+                <Form.Group controlId="profileImageUpload" className="mb-2">
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => setProfileImageFile(event.target.files?.[0] || null)}
+                    disabled={uploadingImage}
+                  />
+                </Form.Group>
+                <Button
+                  size="sm"
+                  onClick={handleProfileImageUpload}
+                  disabled={!profileImageFile || uploadingImage}
+                >
+                  {uploadingImage ? 'Uploading...' : 'Update Picture'}
+                </Button>
+              </div>
 
               <div className="d-flex justify-content-between align-items-center">
                 <div>

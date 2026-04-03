@@ -8,6 +8,8 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const { cartCount } = useCart();
   const [scrolled, setScrolled] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [profileImageError, setProfileImageError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,6 +22,56 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    setProfileImageError(false);
+  }, [user?.profileImage, user?.name]);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      if (!user) {
+        setUnreadCount(0);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/notifications/unread-count`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        setUnreadCount(data?.data?.unreadCount || 0);
+      } catch (error) {
+        setUnreadCount(0);
+      }
+    };
+
+    fetchUnread();
+  }, [user, location.pathname]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!user || !token) {
+      return undefined;
+    }
+
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const streamUrl = `${base.replace('/api', '')}/api/stream/me?token=${encodeURIComponent(token)}`;
+    const eventSource = new EventSource(streamUrl);
+
+    const handleNotification = () => {
+      setUnreadCount((prev) => prev + 1);
+    };
+
+    eventSource.addEventListener('notification_new', handleNotification);
+
+    return () => {
+      eventSource.removeEventListener('notification_new', handleNotification);
+      eventSource.close();
+    };
+  }, [user]);
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -30,7 +82,13 @@ const Navbar = () => {
   };
 
   const getProfileImage = () => {
-    if (user?.profileImage) {
+    const rawImage = user?.profileImage;
+    const hasValidRemoteImage = typeof rawImage === 'string'
+      && rawImage.trim() !== ''
+      && rawImage !== 'null'
+      && rawImage !== 'undefined';
+
+    if (hasValidRemoteImage && !profileImageError) {
       return user.profileImage;
     }
     
@@ -89,6 +147,7 @@ const Navbar = () => {
                   <img
                     src={getProfileImage()}
                     alt="Profile"
+                    onError={() => setProfileImageError(true)}
                     className="rounded-circle"
                     style={{
                       width: '32px',
@@ -102,6 +161,13 @@ const Navbar = () => {
 
                 <Nav.Link as={Link} to="/my-orders" className={isActive('/my-orders') ? 'active' : ''}>
                   My Orders
+                </Nav.Link>
+
+                <Nav.Link as={Link} to="/notifications" className={isActive('/notifications') ? 'active' : ''}>
+                  Notifications
+                  {unreadCount > 0 && (
+                    <Badge bg="primary" className="ms-1">{unreadCount}</Badge>
+                  )}
                 </Nav.Link>
 
                 {/* Admin Dashboard Link */}
@@ -136,7 +202,7 @@ const Navbar = () => {
         </BSNavbar.Collapse>
       </Container>
 
-      <style jsx>{`
+      <style>{`
         .custom-navbar {
           transition: box-shadow 0.3s ease;
         }

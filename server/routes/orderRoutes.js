@@ -1,11 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('../middleware/authMiddleware');
+const { requireAdmin } = require('../middleware/adminMiddleware');
+const {
+	createOrder,
+	getMyOrders,
+	getAllOrdersAdmin,
+	getOrderById,
+	updateOrderStatus,
+	cancelOrder
+} = require('../controllers/orderController');
 
-// Order routes will be implemented here
-// GET /api/orders
-// GET /api/orders/:id
-// POST /api/orders
-// PUT /api/orders/:id/status (admin only)
-// GET /api/orders/user/:userId
+router.post('/', verifyToken, createOrder);
+router.get('/my', verifyToken, getMyOrders);
+router.get('/admin/all', verifyToken, requireAdmin, getAllOrdersAdmin);
+router.get('/:id', verifyToken, getOrderById);
+router.patch('/:id/status', verifyToken, requireAdmin, updateOrderStatus);
+router.post('/:id/cancel', verifyToken, cancelOrder);
 
 module.exports = router;

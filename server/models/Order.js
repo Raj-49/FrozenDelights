@@ -38,6 +38,14 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  couponCode: {
+    type: String,
+    default: ''
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
   tax: {
     type: Number,
     required: true
@@ -50,6 +58,11 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'paid', 'failed'],
     default: 'pending'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['cod', 'card', 'upi'],
+    default: 'cod'
   },
   razorpayOrderId: {
     type: String,
@@ -64,6 +77,34 @@ const orderSchema = new mongoose.Schema({
     enum: ['Placed', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'],
     default: 'Placed'
   },
+  promisedMinutes: {
+    type: Number,
+    default: 45,
+    min: 1
+  },
+  estimatedDeliveryAt: {
+    type: Date,
+    default: null
+  },
+  statusHistory: [{
+    status: {
+      type: String,
+      enum: ['Placed', 'Confirmed', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'],
+      required: true
+    },
+    note: {
+      type: String,
+      default: ''
+    },
+    changedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    changedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   deliveryAddress: {
     street: String,
     city: String,

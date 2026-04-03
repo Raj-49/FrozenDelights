@@ -2,23 +2,44 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
+const { sendVerificationEmail, sendPasswordResetEmail, sendSignInAlertEmail, sendWelcomeEmail } = require('../services/emailService');
+const RESERVED_ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'shopfrozendelights@gmail.com').toLowerCase();
+const SEND_SIGNIN_ALERTS = process.env.SEND_SIGNIN_ALERTS !== 'false';
+
+const getImageFromRequest = (req) => {
+  if (req.file?.path) {
+    return req.file.path;
+  }
+
+  if (req.file?.buffer) {
+    const mimeType = req.file.mimetype || 'image/jpeg';
+    const base64 = req.file.buffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  }
+
+  return req.body?.image;
+};
 
 const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (normalizedEmail === RESERVED_ADMIN_EMAIL) {
+      return res.status(403).json({
+        success: false,
+        message: 'This email is reserved for admin Google Sign-In only. Please use /admin/login.'
+      });
+    }
 
     // Check if email already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({
         success: false,
         message: 'Email already registered'
       });
     }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Generate email verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -28,8 +49,8 @@ const register = async (req, res, next) => {
     // Create user
     const user = new User({
       name,
-      email,
-      password: hashedPassword,
+      email: normalizedEmail,
+      password,
       authProvider: 'local',
       isEmailVerified: false,
       emailVerificationToken: hashedToken,
@@ -39,7 +60,7 @@ const register = async (req, res, next) => {
     await user.save();
 
     // Send verification email
-    await sendVerificationEmail(email, verificationToken);
+    await sendVerificationEmail(normalizedEmail, verificationToken);
 
     res.status(201).json({
       success: true,
@@ -72,6 +93,11 @@ const verifyEmail = async (req, res, next) => {
     user.emailVerificationExpires = undefined;
     await user.save();
 
+    sendWelcomeEmail({
+      to: user.email,
+      customerName: user.name
+    }).catch(() => {});
+
     const jwtToken = jwt.sign(
       { id: user._id, role: user.role, name: user.name, email: user.email },
       process.env.JWT_SECRET,
@@ -99,14 +125,29 @@ const verifyEmail = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (normalizedEmail === RESERVED_ADMIN_EMAIL) {
+      return res.status(403).json({
+        success: false,
+        message: 'This email is reserved for admin. Please use /admin/login and Continue with Google.'
+      });
+    }
 
     // Find user with password and isEmailVerified
-    const user = await User.findOne({ email }).select('+password +isEmailVerified');
+    const user = await User.findOne({ email: normalizedEmail }).select('+password +isEmailVerified');
 
     if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
+      });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin accounts use Google Sign-In only.'
       });
     }
 
@@ -153,6 +194,16 @@ const login = async (req, res, next) => {
       { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
     );
 
+    if (SEND_SIGNIN_ALERTS && user.role === 'admin') {
+      sendSignInAlertEmail({
+        to: user.email,
+        customerName: user.name,
+        provider: user.authProvider === 'google' ? 'Google' : 'Email/Password',
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip
+      }).catch(() => {});
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -180,6 +231,16 @@ const googleCallback = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
     );
+
+    if (SEND_SIGNIN_ALERTS && user.role === 'admin') {
+      sendSignInAlertEmail({
+        to: user.email,
+        customerName: user.name,
+        provider: 'Google',
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip
+      }).catch(() => {});
+    }
 
     res.redirect(`${process.env.CLIENT_URL}/auth/google/success?token=${token}`);
   } catch (error) {
@@ -262,10 +323,7 @@ const resetPassword = async (req, res, next) => {
       });
     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    user.password = hashedPassword;
+    user.password = password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save();
@@ -329,6 +387,33 @@ const resendVerification = async (req, res, next) => {
   }
 };
 
+const updateProfileImage = async (req, res, next) => {
+  try {
+    const image = getImageFromRequest(req);
+
+    if (!image) {
+      return res.status(400).json({
+        success: false,
+        message: 'Profile image is required'
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { profileImage: image },
+      { new: true }
+    ).select('-password -emailVerificationToken -passwordResetToken -passwordResetExpires');
+
+    res.status(200).json({
+      success: true,
+      data: user,
+      message: 'Profile image updated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   verifyEmail,
@@ -337,5 +422,6 @@ module.exports = {
   getMe,
   forgotPassword,
   resetPassword,
-  resendVerification
+  resendVerification,
+  updateProfileImage
 };

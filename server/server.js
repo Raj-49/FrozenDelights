@@ -11,6 +11,10 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const streamRoutes = require('./routes/streamRoutes');
+const couponRoutes = require('./routes/couponRoutes');
+const { startPaymentReconciliationJob } = require('./controllers/paymentController');
 
 // Connect to database
 connectDB();
@@ -19,7 +23,12 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') {
+    return next();
+  }
+  return express.json()(req, res, next);
+});
 app.use(passport.initialize());
 
 // Routes
@@ -28,6 +37,9 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/stream', streamRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -44,4 +56,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startPaymentReconciliationJob();
 });

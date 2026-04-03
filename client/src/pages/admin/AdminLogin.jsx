@@ -1,83 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Alert, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import { useAuth } from '../../context/AuthContext';
-import { Alert, Form, Button, Container, Row, Col, Card, Spinner } from 'react-bootstrap';
-import api from '../../api/axios';
 
 const AdminLogin = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // If admin already logged in, redirect to admin dashboard
     if (user) {
       if (user.role === 'admin') {
         navigate('/admin');
       } else {
-        // Regular user trying to access admin login
         navigate('/');
       }
     }
   }, [user, navigate]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    // Clear error when user starts typing
-    if (error) {
-      setError('');
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await api.post('/auth/login', formData);
-      
-      if (response.data.success) {
-        const { user: loggedInUser } = response.data.data;
-        
-        // Check if user is admin
-        if (loggedInUser.role !== 'admin') {
-          setError('Access denied. Admin credentials required.');
-          // Clear form
-          setFormData({ email: '', password: '' });
-          return;
-        }
-
-        // Admin login successful
-        localStorage.setItem('token', response.data.data.token);
-        localStorage.setItem('user', JSON.stringify(loggedInUser));
-        navigate('/admin');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+  const handleGoogleAdminLogin = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/google`;
   };
 
   return (
     <div className="min-vh-100 bg-dark">
       <Container className="py-5">
         <Row className="justify-content-center">
-          <Col md={6} lg={4}>
+          <Col md={7} lg={5}>
             <Card className="shadow border-0">
               <Card.Body className="p-4">
                 <div className="text-center mb-4">
                   <h2 className="fw-bold text-primary">🍦 FrozenDelights Admin</h2>
-                  <p className="text-muted">Admin Portal</p>
+                  <p className="text-muted mb-1">Google Sign-In Only</p>
+                  <small className="text-muted">Allowed admin email: shopfrozendelights@gmail.com</small>
                 </div>
 
                 {error && (
@@ -86,51 +41,19 @@ const AdminLogin = () => {
                   </Alert>
                 )}
 
-                <Form onSubmit={handleSubmit}>
-                  <Form.Group className="mb-3">
-                    <Form.Label className="text-dark">Email</Form.Label>
-                    <Form.Control
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="Enter admin email"
-                      required
-                      className="bg-light"
-                    />
-                  </Form.Group>
+                <Alert variant="info" className="mb-4">
+                  Admin manual email/password login is disabled. Please continue with Google.
+                </Alert>
 
-                  <Form.Group className="mb-4">
-                    <Form.Label className="text-dark">Password</Form.Label>
-                    <Form.Control
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Enter admin password"
-                      required
-                      className="bg-light"
-                    />
-                  </Form.Group>
+                <Button
+                  variant="dark"
+                  className="w-100 mb-3"
+                  onClick={handleGoogleAdminLogin}
+                >
+                  Continue with Google
+                </Button>
 
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    className="w-100"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Spinner as="span" animation="border" size="sm" />
-                        <span className="ms-2">Signing in...</span>
-                      </>
-                    ) : (
-                      'Admin Sign In'
-                    )}
-                  </Button>
-                </Form>
-
-                <div className="text-center mt-3">
+                <div className="text-center">
                   <Link to="/" className="text-decoration-none text-muted">
                     ← Back to Store
                   </Link>
@@ -140,18 +63,6 @@ const AdminLogin = () => {
           </Col>
         </Row>
       </Container>
-
-      <style jsx>{`
-        .min-vh-100 {
-          min-height: 100vh;
-        }
-        .bg-dark {
-          background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-        }
-        .border-0 {
-          border: none !important;
-        }
-      `}</style>
     </div>
   );
 };

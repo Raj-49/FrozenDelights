@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/authMiddleware');
-const { register, verifyEmail, login, googleCallback, getMe, forgotPassword, resetPassword, resendVerification } = require('../controllers/authController');
+const { uploadSingleImage } = require('../config/cloudinary');
+const { register, verifyEmail, login, googleCallback, getMe, forgotPassword, resetPassword, resendVerification, updateProfileImage } = require('../controllers/authController');
 
 // Public routes
 router.post('/register', register);
@@ -13,6 +14,7 @@ router.post('/resend-verification', resendVerification);
 
 // Protected routes
 router.get('/me', verifyToken, getMe);
+router.patch('/profile-image', verifyToken, uploadSingleImage, updateProfileImage);
 
 // Google OAuth routes
 router.get('/google', require('passport').authenticate('google', { session: false, scope: ['profile', 'email'] }));

@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 const OrderSuccess = () => {
-  const { user } = useAuth;
+  const { id } = useParams();
+  const { user } = useAuth();
+  const [order, setOrder] = useState(null);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        const response = await api.get(`/orders/${id}`);
+        setOrder(response.data.data);
+      } catch (error) {
+        setOrder(null);
+      }
+    };
+
+    if (id) {
+      fetchOrder();
+    }
+  }, [id]);
 
   return (
     <Container className="py-5">
@@ -21,9 +40,12 @@ const OrderSuccess = () => {
               </p>
               
               <Alert variant="info">
-                <strong>Order #FD-{Math.random().toString(36).substr(2, 9).toUpperCase()}</strong>
+                <strong>Order #{order?._id?.slice(-8).toUpperCase() || 'PENDING'}</strong>
                 <br />
-                <small>You'll receive an order confirmation at {user?.email || 'your email address'}</small>
+                <small>
+                  You'll receive an order confirmation at {user?.email || 'your email address'}
+                  {order?.totalAmount ? ` • Total ₹${order.totalAmount.toFixed(2)}` : ''}
+                </small>
               </Alert>
               
               <div className="mb-4">

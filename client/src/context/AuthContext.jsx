@@ -35,6 +35,11 @@ const authReducer = (state, action) => {
         loading: false,
         error: action.payload,
       };
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: action.payload,
+      };
     default:
       return state;
   }
@@ -132,6 +137,11 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGOUT' });
   };
 
+  const updateUser = (updatedUser) => {
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    dispatch({ type: 'UPDATE_USER', payload: updatedUser });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -139,6 +149,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updateUser,
       }}
     >
       {children}

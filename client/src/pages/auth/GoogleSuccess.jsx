@@ -1,39 +1,28 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import api from '../../api/axios';
 import { Spinner } from 'react-bootstrap';
 
 const GoogleSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
 
   useEffect(() => {
-    const handleGoogleSuccess = () => {
+    const handleGoogleSuccess = async () => {
       try {
         // Extract token from URL
         const params = new URLSearchParams(location.search);
         const token = params.get('token');
 
         if (token) {
-          // Decode JWT payload to get user info
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const user = {
-            id: payload.id,
-            name: payload.name,
-            email: payload.email,
-            role: payload.role
-          };
-
-          // Store token and user
+          // Store token first so axios interceptor can send it
           localStorage.setItem('token', token);
-          localStorage.setItem('user', JSON.stringify(user));
-
-          // Update AuthContext (this will trigger a re-render)
-          login(payload.email, ''); // Empty password since it's OAuth
+          const response = await api.get('/auth/me');
+          const loggedInUser = response.data.data;
+          localStorage.setItem('user', JSON.stringify(loggedInUser));
           
-          // Redirect immediately
-          navigate('/');
+          // Redirect based on role
+          window.location.href = loggedInUser.role === 'admin' ? '/admin' : '/';
         } else {
           navigate('/login?error=google_failed');
         }
@@ -44,7 +33,7 @@ const GoogleSuccess = () => {
     };
 
     handleGoogleSuccess();
-  }, [location, navigate, login]);
+  }, [location, navigate]);
 
   // Show loading spinner while processing
   return (

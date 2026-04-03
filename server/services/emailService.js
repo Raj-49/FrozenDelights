@@ -204,8 +204,145 @@ const sendInvoiceEmail = async (to, pdfBuffer, orderId) => {
   }
 };
 
+const sendOrderStatusEmail = async ({ to, customerName, orderId, status, note }) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+
+    const trackingUrl = `${process.env.CLIENT_URL}/order/${orderId}/track`;
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM,
+      to,
+      subject: `🍦 Order Update: ${status}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">FrozenDelights</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">Your order status changed</p>
+          </div>
+          <div style="background: #fff; padding: 30px; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px;">
+            <p>Hi ${customerName || 'Customer'},</p>
+            <p>Your order <strong>#${String(orderId).slice(-8).toUpperCase()}</strong> is now <strong>${status}</strong>.</p>
+            ${note ? `<p style="color:#555;">Note: ${note}</p>` : ''}
+            <div style="margin-top: 24px;">
+              <a href="${trackingUrl}" style="display:inline-block;background:#0d6efd;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;">Track Your Order</a>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Order status email error:', error.message);
+    return false;
+  }
+};
+
+const sendSignInAlertEmail = async ({ to, customerName, provider, userAgent, ipAddress }) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+
+    const signInTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM,
+      to,
+      subject: '🔐 New Sign-In to your FrozenDelights account',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">FrozenDelights</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">Security Alert</p>
+          </div>
+          <div style="background: #fff; padding: 30px; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px;">
+            <p>Hi ${customerName || 'User'},</p>
+            <p>We detected a new sign-in to your account.</p>
+            <ul style="line-height: 1.8; color: #333;">
+              <li><strong>Method:</strong> ${provider || 'Unknown'}</li>
+              <li><strong>Time:</strong> ${signInTime}</li>
+              <li><strong>IP:</strong> ${ipAddress || 'N/A'}</li>
+              <li><strong>Device:</strong> ${userAgent || 'N/A'}</li>
+            </ul>
+            <p>If this wasn't you, please reset your password immediately.</p>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Sign-in alert email error:', error.message);
+    return false;
+  }
+};
+
+const sendWelcomeEmail = async ({ to, customerName }) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+
+    const menuUrl = `${process.env.CLIENT_URL}/menu`;
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM,
+      to,
+      subject: '🍦 Welcome to FrozenDelights!',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">Welcome to FrozenDelights</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0;">Your account is now ready 🎉</p>
+          </div>
+          <div style="background: #fff; padding: 30px; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px;">
+            <p>Hi ${customerName || 'there'},</p>
+            <p>Thanks for joining FrozenDelights! Start exploring our menu and place your first order.</p>
+            <div style="margin-top: 20px;">
+              <a href="${menuUrl}" style="display:inline-block;background:#0d6efd;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;">Browse Menu</a>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Welcome email error:', error.message);
+    return false;
+  }
+};
+
 module.exports = { 
   sendVerificationEmail,
   sendPasswordResetEmail,
-  sendInvoiceEmail 
+  sendInvoiceEmail,
+  sendOrderStatusEmail,
+  sendSignInAlertEmail,
+  sendWelcomeEmail
 };
