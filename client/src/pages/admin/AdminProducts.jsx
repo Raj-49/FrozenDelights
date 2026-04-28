@@ -187,21 +187,30 @@ const AdminProducts = () => {
 
   return (
     <Container className="py-4">
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-        <div>
-          <h2 className="fw-bold mb-1">Admin Products</h2>
-          <p className="text-muted mb-0">Create, edit, and manage product catalog.</p>
-        </div>
-        <div className="d-flex gap-2">
-          <Button as={Link} to="/admin" variant="outline-dark" size="sm">Dashboard</Button>
-          <Button as={Link} to="/admin/coupons" variant="outline-primary" size="sm">Coupons</Button>
-        </div>
-      </div>
+      <Card className="border-0 shadow-sm overflow-hidden mb-4">
+        <Card.Body className="p-4 p-lg-5">
+          <Row className="align-items-center g-3">
+            <Col lg={8}>
+              <Badge bg="dark" className="mb-3">Catalog control</Badge>
+              <h2 className="fw-bold mb-2">Admin Products</h2>
+              <p className="text-muted mb-0" style={{ maxWidth: '48rem' }}>
+                Manage the visible catalog, keep the product set current, and maintain a clean visual presentation for every item.
+              </p>
+            </Col>
+            <Col lg={4} className="text-lg-end">
+              <div className="d-flex gap-2 flex-wrap justify-content-lg-end">
+                <Button as={Link} to="/admin" variant="outline-dark" size="sm">Dashboard</Button>
+                <Button as={Link} to="/admin/coupons" variant="outline-primary" size="sm">Coupons</Button>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
-      <Card className="mb-4">
+      <Card className="mb-4 border-0 shadow-sm">
         <Card.Body className="d-flex gap-2 flex-wrap">
           <Badge bg="dark">Total: {summary.total}</Badge>
           <Badge bg="success">Available: {summary.available}</Badge>
@@ -212,8 +221,8 @@ const AdminProducts = () => {
 
       <Row className="g-4">
         <Col lg={5}>
-          <Card>
-            <Card.Header>{editingId ? 'Edit Product' : 'Create Product'}</Card.Header>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-transparent fw-semibold">{editingId ? 'Edit Product' : 'Create Product'}</Card.Header>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3" controlId="productName">
@@ -333,8 +342,8 @@ const AdminProducts = () => {
         </Col>
 
         <Col lg={7}>
-          <Card>
-            <Card.Header>All Products</Card.Header>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-transparent fw-semibold">All Products</Card.Header>
             <Card.Body>
               {loading ? (
                 <div className="text-center py-4">
@@ -365,10 +374,10 @@ const AdminProducts = () => {
                                   src={resolveProductImage(product)}
                                   alt={product.name}
                                   loading="lazy"
-                                  style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px' }}
+                                  className="admin-product-preview"
                                 />
                               ) : (
-                                <div className="d-flex align-items-center justify-content-center bg-light text-muted" style={{ width: '64px', height: '64px', borderRadius: '8px' }}>
+                                <div className="d-flex align-items-center justify-content-center bg-body-tertiary text-muted admin-product-preview">
                                   No image
                                 </div>
                               )}

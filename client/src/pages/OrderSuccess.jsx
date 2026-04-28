@@ -28,44 +28,41 @@ const OrderSuccess = () => {
     <Container className="py-5">
       <Row className="justify-content-center">
         <Col md={8} lg={6}>
-          <Card className="text-center shadow">
+          <Card className="text-center shadow border-0 overflow-hidden">
             <Card.Body className="p-5">
               <div className="mb-4">
                 <div style={{ fontSize: '4rem' }}>🎉</div>
+                <h2 className="fw-bold text-success mb-2">Order Placed Successfully!</h2>
+                <p className="text-muted mb-0">
+                  Thank you for your order. Your ice creams are now in the processing flow and can be tracked anytime.
+                </p>
               </div>
-              
-              <h2 className="fw-bold text-success mb-3">Order Placed Successfully!</h2>
-              <p className="text-muted mb-4">
-                Thank you for your order! We'll deliver your ice creams as soon as possible.
-              </p>
-              
-              <Alert variant="info">
+
+              <Alert variant="success" className="text-start">
                 <strong>Order #{order?._id?.slice(-8).toUpperCase() || 'PENDING'}</strong>
                 <br />
                 <small>
-                  You'll receive an order confirmation at {user?.email || 'your email address'}
+                  Confirmation will be sent to {user?.email || 'your email address'}
                   {order?.totalAmount ? ` • Total ₹${order.totalAmount.toFixed(2)}` : ''}
                 </small>
               </Alert>
-              
-              <div className="mb-4">
-                <h5 className="mb-3">What's Next?</h5>
-                <div className="text-start">
-                  <div className="mb-2">
-                    <span className="me-2">📦</span>
-                    <span>Your order is being prepared</span>
-                  </div>
-                  <div className="mb-2">
-                    <span className="me-2">🚚</span>
-                    <span>Delivery partner will be assigned soon</span>
-                  </div>
-                  <div className="mb-2">
-                    <span className="me-2">📍</span>
-                    <span>Track your order in real-time</span>
-                  </div>
-                </div>
-              </div>
-              
+
+              <Row className="g-3 mb-4 text-start">
+                {[
+                  { icon: '📦', title: 'Order received', text: 'Your order has entered the queue.' },
+                  { icon: '🚚', title: 'Delivery in progress', text: 'We will assign the delivery flow shortly.' },
+                  { icon: '📍', title: 'Live tracking available', text: 'Use tracking to follow progress step by step.' }
+                ].map((item) => (
+                  <Col md={4} key={item.title}>
+                    <div className="p-3 rounded-3 bg-body-tertiary h-100">
+                      <div className="fs-4 mb-2">{item.icon}</div>
+                      <div className="fw-semibold mb-1">{item.title}</div>
+                      <small className="text-muted">{item.text}</small>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+
               <div className="d-grid gap-2">
                 <Button variant="primary" href="/my-orders">
                   Track My Order
@@ -77,11 +74,9 @@ const OrderSuccess = () => {
                   Back to Home
                 </Button>
               </div>
-              
-              <div className="mt-4">
-                <small className="text-muted">
-                  Need help? Contact us at support@frozendelights.com
-                </small>
+
+              <div className="mt-4 small text-muted">
+                Need help? Contact us at support@frozendelights.com
               </div>
             </Card.Body>
           </Card>

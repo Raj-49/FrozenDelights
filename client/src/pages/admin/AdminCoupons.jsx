@@ -107,21 +107,30 @@ const AdminCoupons = () => {
 
   return (
     <Container className="py-4">
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-        <div>
-          <h2 className="fw-bold mb-1">Admin Coupons</h2>
-          <p className="text-muted mb-0">Create and manage promotional coupons.</p>
-        </div>
-        <div className="d-flex gap-2">
-          <Button as={Link} to="/admin" variant="outline-dark" size="sm">Dashboard</Button>
-          <Button as={Link} to="/admin/orders" variant="outline-primary" size="sm">Orders</Button>
-        </div>
-      </div>
+      <Card className="border-0 shadow-sm overflow-hidden mb-4">
+        <Card.Body className="p-4 p-lg-5">
+          <Row className="align-items-center g-3">
+            <Col lg={8}>
+              <Badge bg="dark" className="mb-3">Promotions control</Badge>
+              <h2 className="fw-bold mb-2">Admin Coupons</h2>
+              <p className="text-muted mb-0" style={{ maxWidth: '48rem' }}>
+                Create and manage discount offers with a clear view of active, inactive, and expiring promotions.
+              </p>
+            </Col>
+            <Col lg={4} className="text-lg-end">
+              <div className="d-flex gap-2 flex-wrap justify-content-lg-end">
+                <Button as={Link} to="/admin" variant="outline-dark" size="sm">Dashboard</Button>
+                <Button as={Link} to="/admin/orders" variant="outline-primary" size="sm">Orders</Button>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
-      <Card className="mb-4">
+      <Card className="mb-4 border-0 shadow-sm">
         <Card.Body className="d-flex gap-2 flex-wrap">
           <Badge bg="dark">Total: {summary.total}</Badge>
           <Badge bg="success">Active: {summary.active}</Badge>
@@ -132,8 +141,8 @@ const AdminCoupons = () => {
 
       <Row className="g-4">
         <Col lg={5}>
-          <Card>
-            <Card.Header>Create Coupon</Card.Header>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-transparent fw-semibold">Create Coupon</Card.Header>
             <Card.Body>
               <Form onSubmit={handleCreate}>
                 <Form.Group className="mb-3" controlId="couponCode">
@@ -275,8 +284,8 @@ const AdminCoupons = () => {
         </Col>
 
         <Col lg={7}>
-          <Card>
-            <Card.Header>All Coupons</Card.Header>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-transparent fw-semibold">All Coupons</Card.Header>
             <Card.Body>
               {loading ? (
                 <div className="text-center py-4">

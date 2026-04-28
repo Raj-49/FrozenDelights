@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Alert, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert, Form, Badge } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import api from '../api/axios';
@@ -44,6 +44,13 @@ const Checkout = () => {
   const deliveryFee = cart.length > 0 ? (discountedSubtotal >= 299 ? 0 : 20) : 0;
   const tax = Number((discountedSubtotal * 0.05).toFixed(2));
   const total = Number((discountedSubtotal + tax + deliveryFee).toFixed(2));
+  const savingsText = useMemo(() => {
+    if (discount > 0) {
+      return `You are saving ₹${discount.toFixed(2)} with your coupon.`;
+    }
+
+    return 'Add a coupon code to reduce the total amount.';
+  }, [discount]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -218,10 +225,25 @@ const Checkout = () => {
     <Container className="py-5">
       <Row className="justify-content-center">
         <Col md={12}>
-          <div className="text-center mb-5">
-            <h1 className="fw-bold">🛍️ Checkout</h1>
-            <p className="text-muted">Complete your order details</p>
-          </div>
+          <Card className="border-0 shadow-sm overflow-hidden mb-4">
+            <Card.Body className="p-4 p-lg-5">
+              <Row className="align-items-center g-4">
+                <Col lg={8}>
+                  <Badge bg="dark" className="mb-3">Secure checkout</Badge>
+                  <h1 className="fw-bold mb-2">Complete your order</h1>
+                  <p className="text-muted mb-0" style={{ maxWidth: '48rem' }}>
+                    Review your delivery details, apply a coupon if you have one, and place your order with a clear summary of every charge.
+                  </p>
+                </Col>
+                <Col lg={4} className="text-lg-end">
+                  <div className="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <Badge bg="primary" className="px-3 py-2">{cart.length} item(s)</Badge>
+                    <Badge bg="success" className="px-3 py-2">₹{total.toFixed(2)} total</Badge>
+                  </div>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
 
           {error && <Alert variant="danger">{error}</Alert>}
 
@@ -231,10 +253,10 @@ const Checkout = () => {
             </Alert>
           )}
           
-          <Row>
+          <Row className="g-4">
             <Col md={8}>
-              <Card className="mb-4">
-                <Card.Header>Delivery Information</Card.Header>
+              <Card className="border-0 shadow-sm mb-4">
+                <Card.Header className="bg-transparent fw-semibold">Delivery Information</Card.Header>
                 <Card.Body>
                   <Form>
                     <Form.Group className="mb-3" controlId="email">
@@ -286,49 +308,53 @@ const Checkout = () => {
                 </Card.Body>
               </Card>
               
-              <Card>
-                <Card.Header>Payment Information</Card.Header>
+              <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-transparent fw-semibold">Payment Information</Card.Header>
                 <Card.Body>
+                  <div className="mb-3 text-muted small">
+                    Choose the payment method that works best for you.
+                  </div>
                   <Form>
-                    <Form.Group className="mb-3">
+                    {[
+                      { value: 'cod', label: 'Cash on Delivery', note: 'Pay when your order arrives' },
+                      { value: 'card', label: 'Credit/Debit Card', note: 'Fast online payment' },
+                      { value: 'upi', label: 'UPI Payment', note: 'Quick scan and pay' }
+                    ].map((option) => (
                       <Form.Check
+                        key={option.value}
                         type="radio"
-                        label="Cash on Delivery"
+                        className="border rounded-3 p-3 mb-3"
+                        label={
+                          <div>
+                            <div className="fw-semibold">{option.label}</div>
+                            <small className="text-muted">{option.note}</small>
+                          </div>
+                        }
                         name="paymentMethod"
-                        value="cod"
-                        checked={formData.paymentMethod === 'cod'}
+                        value={option.value}
+                        checked={formData.paymentMethod === option.value}
                         onChange={handleChange}
                       />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="radio"
-                        label="Credit/Debit Card"
-                        name="paymentMethod"
-                        value="card"
-                        checked={formData.paymentMethod === 'card'}
-                        onChange={handleChange}
-                      />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="radio"
-                        label="UPI Payment"
-                        name="paymentMethod"
-                        value="upi"
-                        checked={formData.paymentMethod === 'upi'}
-                        onChange={handleChange}
-                      />
-                    </Form.Group>
+                    ))}
                   </Form>
                 </Card.Body>
               </Card>
             </Col>
             
             <Col md={4}>
-              <Card className="sticky-top" style={{ top: '20px' }}>
-                <Card.Header>Order Summary</Card.Header>
+              <Card className="sticky-top border-0 shadow-sm" style={{ top: '96px' }}>
+                <Card.Header className="bg-transparent fw-semibold">Order Summary</Card.Header>
                 <Card.Body>
+                  <div className="mb-3 p-3 rounded-3 bg-body-tertiary">
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="fw-semibold">Current savings</span>
+                      <Badge bg={discount > 0 ? 'success' : 'secondary'}>
+                        {discount > 0 ? `₹${discount.toFixed(2)}` : 'None'}
+                      </Badge>
+                    </div>
+                    <small className="text-muted">{savingsText}</small>
+                  </div>
+
                   <div className="mb-3">
                     <Form.Label>Coupon Code</Form.Label>
                     <div className="d-flex gap-2">
@@ -346,11 +372,7 @@ const Checkout = () => {
                         </Button>
                       )}
                     </div>
-                    {appliedCoupon && (
-                      <small className="text-success d-block mt-2">
-                        {appliedCoupon.code} applied. You saved ₹{Number(appliedCoupon.discount || 0).toFixed(2)}
-                      </small>
-                    )}
+                    {appliedCoupon && <small className="text-success d-block mt-2">{appliedCoupon.code} applied successfully.</small>}
                   </div>
 
                   {cart.length === 0 ? (
@@ -396,6 +418,10 @@ const Checkout = () => {
                     <Col><strong>Total:</strong></Col>
                     <Col className="text-end"><strong>₹{total.toFixed(2)}</strong></Col>
                   </Row>
+
+                  <div className="mb-3 small text-muted">
+                    Delivery fee becomes free above ₹299. Taxes are included in the total shown above.
+                  </div>
                   
                   <Button
                     variant="success"

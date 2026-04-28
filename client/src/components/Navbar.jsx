@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Navbar as BSNavbar, Nav, Container, Badge, Button } from 'react-bootstrap';
+import { Navbar as BSNavbar, Nav, Container, Badge, Button, Dropdown, Offcanvas } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { cartCount } = useCart();
+  const { isDark } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profileImageError, setProfileImageError] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -77,6 +81,11 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const handleMobileDestination = (path) => {
+    setShowMobileMenu(false);
+    navigate(path);
+  };
+
   const isActive = (path) => {
     return location.pathname === path;
   };
@@ -108,25 +117,41 @@ const Navbar = () => {
   };
 
   return (
+    <>
     <BSNavbar 
       expand="lg" 
       sticky="top" 
       className={`custom-navbar ${scrolled ? 'scrolled' : ''}`}
-      bg="white"
-      variant="light"
+      bg={isDark ? 'dark' : 'white'}
+      variant={isDark ? 'dark' : 'light'}
     >
       <Container>
         <BSNavbar.Brand as={Link} to="/" className="fw-bold">
           🍦 FrozenDelights
         </BSNavbar.Brand>
 
-        <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
+        <div className="d-flex align-items-center gap-2 d-lg-none">
+          <ThemeToggle />
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            onClick={() => setShowMobileMenu(true)}
+          >
+            ☰ More
+          </Button>
+        </div>
+
+        <BSNavbar.Toggle aria-controls="basic-navbar-nav" className="d-none d-lg-inline-flex" />
         
         <BSNavbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto align-items-center">
+          <Nav className="ms-auto align-items-center d-none d-lg-flex">
             {/* Public Links */}
             <Nav.Link as={Link} to="/" className={isActive('/') ? 'active' : ''}>
               Home
+            </Nav.Link>
+
+            <Nav.Link as={Link} to="/menu" className={isActive('/menu') ? 'active' : ''}>
+              Menu
             </Nav.Link>
 
             {/* Cart Link - Show for all users */}
@@ -142,54 +167,42 @@ const Navbar = () => {
             {/* Authenticated Links */}
             {user ? (
               <>
-                {/* Profile Image Link */}
-                <Nav.Link as={Link} to="/profile" className={`profile-link ${isActive('/profile') ? 'active' : ''}`}>
-                  <img
-                    src={getProfileImage()}
-                    alt="Profile"
-                    onError={() => setProfileImageError(true)}
-                    className="rounded-circle"
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      objectFit: 'cover',
-                      border: '2px solid #4facfe'
-                    }}
-                  />
-                  <span className="ms-2 d-none d-lg-inline">Profile</span>
-                </Nav.Link>
+                <ThemeToggle className="ms-lg-2" />
 
-                <Nav.Link as={Link} to="/my-orders" className={isActive('/my-orders') ? 'active' : ''}>
-                  My Orders
-                </Nav.Link>
+                <Dropdown align="end">
+                  <Dropdown.Toggle as={Button} variant="outline-secondary" size="sm" className="ms-2 d-inline-flex align-items-center gap-2">
+                    <img
+                      src={getProfileImage()}
+                      alt="Profile"
+                      onError={() => setProfileImageError(true)}
+                      className="rounded-circle"
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        objectFit: 'cover',
+                        border: '2px solid currentColor'
+                      }}
+                    />
+                    <span className="d-none d-lg-inline">{user.name?.split(' ')[0] || 'Account'}</span>
+                  </Dropdown.Toggle>
 
-                <Nav.Link as={Link} to="/notifications" className={isActive('/notifications') ? 'active' : ''}>
-                  Notifications
-                  {unreadCount > 0 && (
-                    <Badge bg="primary" className="ms-1">{unreadCount}</Badge>
-                  )}
-                </Nav.Link>
-
-                {/* Admin Dashboard Link */}
-                {user.role === 'admin' && (
-                  <Nav.Link as={Link} to="/admin" className={isActive('/admin') ? 'active' : ''}>
-                    Admin Dashboard
-                  </Nav.Link>
-                )}
-
-                {/* Logout Button */}
-                <Button 
-                  variant="outline-danger" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  className="ms-2"
-                >
-                  Logout
-                </Button>
+                  <Dropdown.Menu>
+                    <Dropdown.Item as={Link} to="/profile">👤 Profile</Dropdown.Item>
+                    <Dropdown.Item as={Link} to="/my-orders">📦 My Orders</Dropdown.Item>
+                    <Dropdown.Item as={Link} to="/notifications">
+                      🔔 Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}
+                    </Dropdown.Item>
+                    {user.role === 'admin' && <Dropdown.Divider />}
+                    {user.role === 'admin' && <Dropdown.Item as={Link} to="/admin">🛠 Admin Console</Dropdown.Item>}
+                    <Dropdown.Divider />
+                    <Dropdown.Item onClick={handleLogout}>↩ Logout</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
               </>
             ) : (
               /* Unauthenticated Links */
               <>
+                <ThemeToggle className="ms-2" />
                 <Nav.Link as={Link} to="/login" className={isActive('/login') ? 'active' : ''}>
                   Login
                 </Nav.Link>
@@ -213,7 +226,7 @@ const Navbar = () => {
         
         .custom-navbar .navbar-brand {
           font-size: 1.5rem;
-          color: #007bff !important;
+          color: var(--bs-primary) !important;
         }
         
         .custom-navbar .nav-link {
@@ -222,15 +235,70 @@ const Navbar = () => {
         }
         
         .custom-navbar .nav-link:hover {
-          color: #007bff !important;
+          color: var(--bs-primary) !important;
         }
         
         .custom-navbar .nav-link.active {
-          color: #007bff !important;
+          color: var(--bs-primary) !important;
           font-weight: 600;
         }
       `}</style>
     </BSNavbar>
+
+    <div className="mobile-bottom-nav d-lg-none">
+      <Button variant={isActive('/') ? 'primary' : 'light'} onClick={() => handleMobileDestination('/')} className="mobile-nav-item">
+        <span>🏠 Home</span>
+      </Button>
+      <Button variant={isActive('/menu') ? 'primary' : 'light'} onClick={() => handleMobileDestination('/menu')} className="mobile-nav-item">
+        <span>🍨 Menu</span>
+      </Button>
+      <Button variant={isActive('/cart') ? 'primary' : 'light'} onClick={() => handleMobileDestination('/cart')} className="mobile-nav-item position-relative">
+        <span>🛒 Cart</span>
+        {cartCount > 0 && <Badge bg="danger" pill className="mobile-badge">{cartCount}</Badge>}
+      </Button>
+      <Button
+        variant={isActive('/profile') || isActive('/login') ? 'primary' : 'light'}
+        onClick={() => handleMobileDestination(user ? '/profile' : '/login')}
+        className="mobile-nav-item"
+      >
+        <span>{user ? '👤 Account' : '🔑 Login'}</span>
+      </Button>
+    </div>
+
+    <Offcanvas placement="bottom" show={showMobileMenu} onHide={() => setShowMobileMenu(false)}>
+      <Offcanvas.Header closeButton>
+        <Offcanvas.Title>FrozenDelights</Offcanvas.Title>
+      </Offcanvas.Header>
+      <Offcanvas.Body>
+        <div className="d-grid gap-2">
+          <Button variant="outline-primary" onClick={() => handleMobileDestination('/profile')} disabled={!user}>
+            👤 Profile
+          </Button>
+          <Button variant="outline-primary" onClick={() => handleMobileDestination('/my-orders')} disabled={!user}>
+            📦 My Orders
+          </Button>
+          <Button variant="outline-primary" onClick={() => handleMobileDestination('/notifications')} disabled={!user}>
+            🔔 Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}
+          </Button>
+          {user?.role === 'admin' && (
+            <Button variant="outline-dark" onClick={() => handleMobileDestination('/admin')}>
+              🛠 Admin Console
+            </Button>
+          )}
+          {user ? (
+            <Button variant="outline-danger" onClick={() => { setShowMobileMenu(false); handleLogout(); }}>
+              ↩ Logout
+            </Button>
+          ) : (
+            <>
+              <Button variant="primary" onClick={() => handleMobileDestination('/login')}>🔑 Login</Button>
+              <Button variant="outline-primary" onClick={() => handleMobileDestination('/register')}>✨ Register</Button>
+            </>
+          )}
+        </div>
+      </Offcanvas.Body>
+    </Offcanvas>
+    </>
   );
 };
 

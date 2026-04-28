@@ -198,74 +198,108 @@ const TrackOrder = () => {
   const currentStepIndex = statusOrder.indexOf(order.orderStatus);
   const isTerminal = ['Delivered', 'Cancelled'].includes(order.orderStatus);
   const progress = isTerminal ? 100 : ((currentStepIndex + 1) / statusOrder.length) * 100;
+  const trackBadgeVariant = badgeVariant(order.orderStatus);
 
   return (
     <Container className="py-4">
-      <Button as={Link} to="/my-orders" variant="outline-secondary" size="sm" className="mb-3">← Orders</Button>
+      <div className="mb-3">
+        <Button as={Link} to="/my-orders" variant="outline-secondary" size="sm">← Back to Orders</Button>
+      </div>
 
-      <Card className="mb-4">
-        <Card.Body>
-          <div className="d-flex justify-content-between align-items-start mb-4">
-            <div>
-              <h3 className="mb-1">Order #{order._id.slice(-8).toUpperCase()}</h3>
-              <small className="text-muted">{new Date(order.createdAt).toLocaleString()}</small>
-            </div>
-            <Badge bg={badgeVariant(order.orderStatus)} className="fs-6">{order.orderStatus}</Badge>
-          </div>
-
-          {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
-
-          {!isTerminal && (
-            <Alert variant={order.isDelayed ? 'warning' : 'info'} className="mb-4">
-              {order.isDelayed ? (
-                <><strong>⏰ Running {order.delayMinutes}m Late</strong></>) : (
-                <><strong>⏱️ On Track</strong><div>ETA: {etaCountdown ?? order.etaMinutesRemaining ?? '-'} min</div></>
-              )}
-              {order.delaySeverity === 'critical' && <Badge bg="danger">Critical</Badge>}
-              {order.delaySeverity === 'warning' && <Badge bg="warning">Warning</Badge>}
-            </Alert>
-          )}
-
-          <h5 className="mb-3">Status Progress</h5>
-          <ProgressBar now={progress} label={`${Math.round(progress)}%`} className="mb-4" />
-
-          <div className="mb-4">
-            {statusOrder.map((step, index) => {
-              const completed = currentStepIndex >= index;
-              const isCurrent = currentStepIndex === index;
-              return (
-                <div key={step} className="mb-3">
-                  <div className="d-flex align-items-start">
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: completed ? '#198754' : isCurrent ? '#0d6efd' : '#e9ecef', color: completed || isCurrent ? 'white' : '#6c757d', fontSize: '20px', flexShrink: 0, marginRight: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {statusEmoji[step]}
+      <Card className="border-0 shadow-sm mb-4 overflow-hidden">
+        <Card.Body className="p-4 p-lg-5">
+          <Row className="g-4 align-items-center">
+            <Col lg={8}>
+              <Badge bg="dark" className="mb-3">Live tracking</Badge>
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <h3 className="mb-0">Order #{order._id.slice(-8).toUpperCase()}</h3>
+                <Badge bg={trackBadgeVariant} className="fs-6">{order.orderStatus}</Badge>
+              </div>
+              <small className="text-muted">Placed on {new Date(order.createdAt).toLocaleString()}</small>
+            </Col>
+            <Col lg={4} className="text-lg-end">
+              <div className="p-3 rounded-3 bg-body-tertiary d-inline-block text-start">
+                <div className="fw-semibold mb-1">Delivery status</div>
+                {!isTerminal ? (
+                  order.isDelayed ? (
+                    <div>
+                      <Badge bg="danger" className="mb-2">Running {order.delayMinutes}m late</Badge>
+                      <div className="small text-muted">We are actively processing this order.</div>
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div className={completed || isCurrent ? 'fw-semibold' : 'text-muted'}>{step}</div>
-                      <small className={completed || isCurrent ? '' : 'text-muted'}>{statusMessages[step]}</small>
+                  ) : (
+                    <div>
+                      <Badge bg="success" className="mb-2">On track</Badge>
+                      <div className="small text-muted">ETA: {etaCountdown ?? order.etaMinutesRemaining ?? '-'} min</div>
                     </div>
+                  )
+                ) : (
+                  <div>
+                    <Badge bg={order.orderStatus === 'Delivered' ? 'success' : 'secondary'} className="mb-2">{order.orderStatus}</Badge>
+                    <div className="small text-muted">This order has reached a final status.</div>
                   </div>
-                  {index < statusOrder.length - 1 && <div style={{ width: '2px', height: '30px', backgroundColor: completed ? '#198754' : '#e9ecef', marginLeft: '23px' }} />}
-                </div>
-              );
-            })}
-          </div>
+                )}
+              </div>
+            </Col>
+          </Row>
         </Card.Body>
       </Card>
 
-      <Row className="g-3 mb-4">
+      {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+
+      {!isTerminal && (
+        <Alert variant={order.isDelayed ? 'warning' : 'info'} className="mb-4 border-0 shadow-sm">
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+              <div className="fw-semibold mb-1">{order.isDelayed ? `⏰ Running ${order.delayMinutes}m late` : '⏱️ On track'}</div>
+              <div className="small">{statusMessages[order.orderStatus] || 'Your order is moving ahead.'}</div>
+            </div>
+            <div className="d-flex gap-2 flex-wrap">
+              {order.delaySeverity === 'critical' && <Badge bg="danger">Critical</Badge>}
+              {order.delaySeverity === 'warning' && <Badge bg="warning" text="dark">Warning</Badge>}
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      <Row className="g-4 mb-4">
         <Col md={6}>
-          <Card><Card.Header>Items</Card.Header><Card.Body>{order.items.map((item, i) => (<div key={i} className="d-flex justify-content-between border-bottom py-2"><div>{item.name} ({item.flavor}/{item.size})</div><div>₹{(item.price * item.quantity).toFixed(2)}</div></div>))}</Card.Body></Card>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-transparent fw-semibold">Items</Card.Header>
+            <Card.Body>
+              {order.items.map((item, i) => (
+                <div key={i} className="d-flex justify-content-between border-bottom py-3">
+                  <div>
+                    <div className="fw-semibold">{item.name}</div>
+                    <small className="text-muted">{item.flavor} / {item.size} • Qty {item.quantity}</small>
+                  </div>
+                  <div className="fw-semibold">₹{(item.price * item.quantity).toFixed(2)}</div>
+                </div>
+              ))}
+            </Card.Body>
+          </Card>
         </Col>
         <Col md={6}>
-          <Card><Card.Header>Summary</Card.Header><Card.Body><div className="d-flex justify-content-between mb-2"><span>Subtotal:</span><span>₹{order.subtotal?.toFixed(2)}</span></div>{order.discountAmount > 0 && <div className="d-flex justify-content-between mb-2 text-success"><span>Discount:</span><span>-₹{order.discountAmount?.toFixed(2)}</span></div>}<div className="d-flex justify-content-between mb-2"><span>Tax (5%):</span><span>₹{order.tax?.toFixed(2)}</span></div><div className="d-flex justify-content-between mb-3 border-top pt-3"><strong>Total:</strong><strong className="fs-5">₹{order.totalAmount?.toFixed(2)}</strong></div><div className="p-2 bg-light rounded"><small><strong>Payment:</strong> {order.paymentMethod === 'cod' ? 'COD' : 'Online'} - <Badge bg={order.paymentStatus === 'paid' ? 'success' : 'warning'}>{order.paymentStatus}</Badge></small></div></Card.Body></Card>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-transparent fw-semibold">Summary</Card.Header>
+            <Card.Body>
+              <div className="d-flex justify-content-between mb-2"><span>Subtotal:</span><span>₹{order.subtotal?.toFixed(2)}</span></div>
+              {order.discountAmount > 0 && <div className="d-flex justify-content-between mb-2 text-success"><span>Discount:</span><span>-₹{order.discountAmount?.toFixed(2)}</span></div>}
+              <div className="d-flex justify-content-between mb-2"><span>Tax (5%):</span><span>₹{order.tax?.toFixed(2)}</span></div>
+              <div className="d-flex justify-content-between mb-3 border-top pt-3"><strong>Total:</strong><strong className="fs-5">₹{order.totalAmount?.toFixed(2)}</strong></div>
+              <div className="p-3 rounded-3 bg-body-tertiary">
+                <small className="d-block mb-1"><strong>Payment:</strong> {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online'}</small>
+                <Badge bg={order.paymentStatus === 'paid' ? 'success' : 'warning'}>{order.paymentStatus}</Badge>
+              </div>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
-      <Card>
+      <Card className="border-0 shadow-sm">
         <Card.Body className="d-flex gap-2 flex-wrap">
-          {['Placed', 'Confirmed'].includes(order.orderStatus) && <Button variant="outline-danger" onClick={handleCancelOrder} disabled={cancelLoading}>{cancelLoading ? '...' : 'Cancel'}</Button>}
-          {order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid' && order.orderStatus !== 'Cancelled' && <Button variant="success" onClick={handlePayNow} disabled={payLoading}>{payLoading ? '...' : 'Pay Now'}</Button>}
-          {order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid' && <Button variant="outline-primary" onClick={handleReconcile} disabled={reconLoading}>{reconLoading ? '...' : 'Sync'}</Button>}
+          {['Placed', 'Confirmed'].includes(order.orderStatus) && <Button variant="outline-danger" onClick={handleCancelOrder} disabled={cancelLoading}>{cancelLoading ? 'Cancelling...' : 'Cancel Order'}</Button>}
+          {order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid' && order.orderStatus !== 'Cancelled' && <Button variant="success" onClick={handlePayNow} disabled={payLoading}>{payLoading ? 'Opening Payment...' : 'Pay Now'}</Button>}
+          {order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid' && <Button variant="outline-primary" onClick={handleReconcile} disabled={reconLoading}>{reconLoading ? 'Syncing...' : 'Sync Payment'}</Button>}
           <Button variant="primary" onClick={() => navigate('/menu')} className="ms-auto">Order Again</Button>
         </Card.Body>
       </Card>

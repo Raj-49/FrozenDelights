@@ -15,6 +15,19 @@ import {
 } from 'recharts';
 import api from '../../api/axios';
 
+const statusBadgeVariant = (status) => {
+  const map = {
+    Placed: 'secondary',
+    Confirmed: 'info',
+    Preparing: 'warning',
+    'Out for Delivery': 'primary',
+    Delivered: 'success',
+    Cancelled: 'danger'
+  };
+
+  return map[status] || 'secondary';
+};
+
 const AdminDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [sales, setSales] = useState([]);
@@ -77,20 +90,40 @@ const AdminDashboard = () => {
   }, [orders, revenueSummary]);
 
   const recentOrders = useMemo(() => orders.slice(0, 8), [orders]);
+  const urgentOrders = useMemo(() => {
+    return orders
+      .filter((order) => order.delaySeverity === 'critical' || order.delaySeverity === 'warning')
+      .slice(0, 6);
+  }, [orders]);
+
+  const activeQueue = useMemo(() => {
+    return orders
+      .filter((order) => ['Placed', 'Confirmed', 'Preparing', 'Out for Delivery'].includes(order.orderStatus))
+      .slice(0, 6);
+  }, [orders]);
 
   return (
     <Container className="py-4">
-      <div className="mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div>
-          <h2 className="fw-bold">Admin Dashboard</h2>
-          <p className="text-muted mb-0">Operational snapshot for orders and revenue.</p>
-        </div>
-        <div className="d-flex gap-2 flex-wrap">
-          <Button as={Link} to="/admin/products" variant="outline-secondary" size="sm">Manage Products</Button>
-          <Button as={Link} to="/admin/orders" variant="outline-primary" size="sm">Manage Orders</Button>
-          <Button as={Link} to="/admin/coupons" variant="outline-dark" size="sm">Manage Coupons</Button>
-        </div>
-      </div>
+      <Card className="mb-4 border-0 shadow-sm overflow-hidden">
+        <Card.Body className="p-4 p-lg-5">
+          <Row className="align-items-center g-4">
+            <Col lg={8}>
+              <Badge bg="dark" className="mb-3">Operations Console</Badge>
+              <h2 className="fw-bold mb-2">Admin Dashboard</h2>
+              <p className="text-muted mb-0" style={{ maxWidth: '58rem' }}>
+                A focused view for monitoring orders, revenue, product performance, and urgent delivery issues in one place.
+              </p>
+            </Col>
+            <Col lg={4} className="text-lg-end">
+              <div className="d-flex flex-wrap gap-2 justify-content-lg-end">
+                <Button as={Link} to="/admin/orders" variant="primary">Open Orders</Button>
+                <Button as={Link} to="/admin/products" variant="outline-primary">Products</Button>
+                <Button as={Link} to="/admin/coupons" variant="outline-dark">Coupons</Button>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
       {error && <Alert variant="danger">{error}</Alert>}
 
@@ -102,35 +135,97 @@ const AdminDashboard = () => {
       ) : (
         <>
           <Row className="g-3 mb-4">
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">Total Orders</small><h4 className="mb-0">{metrics.totalOrders}</h4></Card.Body></Card>
+            <Col md={6} lg={3}>
+              <Card className="h-100 border-0 shadow-sm">
+                <Card.Body>
+                  <small className="text-muted">Total Orders</small>
+                  <h3 className="mb-0 fw-bold">{metrics.totalOrders}</h3>
+                  <small className="text-muted">All customer orders recorded</small>
+                </Card.Body>
+              </Card>
             </Col>
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">Today</small><h4 className="mb-0">{metrics.todayOrders}</h4></Card.Body></Card>
+            <Col md={6} lg={3}>
+              <Card className="h-100 border-0 shadow-sm">
+                <Card.Body>
+                  <small className="text-muted">Today</small>
+                  <h3 className="mb-0 fw-bold text-primary">{metrics.todayOrders}</h3>
+                  <small className="text-muted">New orders placed today</small>
+                </Card.Body>
+              </Card>
             </Col>
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">In Progress</small><h4 className="mb-0">{metrics.activeOrders}</h4></Card.Body></Card>
+            <Col md={6} lg={3}>
+              <Card className="h-100 border-0 shadow-sm">
+                <Card.Body>
+                  <small className="text-muted">In Progress</small>
+                  <h3 className="mb-0 fw-bold text-warning">{metrics.activeOrders}</h3>
+                  <small className="text-muted">Orders still moving through prep</small>
+                </Card.Body>
+              </Card>
             </Col>
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">Delivered</small><h4 className="mb-0">{metrics.deliveredOrders}</h4></Card.Body></Card>
+            <Col md={6} lg={3}>
+              <Card className="h-100 border-0 shadow-sm">
+                <Card.Body>
+                  <small className="text-muted">Revenue</small>
+                  <h3 className="mb-0 fw-bold text-success">₹{metrics.totalRevenue.toFixed(2)}</h3>
+                  <small className="text-muted">Revenue recognized from completed sales</small>
+                </Card.Body>
+              </Card>
             </Col>
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">Cancelled</small><h4 className="mb-0">{metrics.cancelledOrders}</h4></Card.Body></Card>
+          </Row>
+
+          <Row className="g-3 mb-4">
+            <Col lg={7}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Header className="d-flex justify-content-between align-items-center bg-transparent">
+                  <span className="fw-semibold">Urgent Queue</span>
+                  <Badge bg={urgentOrders.length > 0 ? 'danger' : 'success'}>{urgentOrders.length}</Badge>
+                </Card.Header>
+                <Card.Body>
+                  {urgentOrders.length === 0 ? (
+                    <div className="text-center text-muted py-4">No delayed orders right now.</div>
+                  ) : (
+                    <div className="d-grid gap-2">
+                      {urgentOrders.map((order) => (
+                        <div key={order._id} className="border rounded-3 p-3 d-flex justify-content-between align-items-center">
+                          <div>
+                            <div className="fw-semibold">#{order._id.slice(-8).toUpperCase()}</div>
+                            <small className="text-muted">
+                              {order.userId?.name || 'Unknown customer'} • {new Date(order.createdAt).toLocaleString()}
+                            </small>
+                            <div className="mt-1">
+                              <Badge bg={order.delaySeverity === 'critical' ? 'danger' : 'warning'}>
+                                {order.delaySeverity === 'critical' ? `Critical delay +${order.delayMinutes || 0} min` : `Warning +${order.delayMinutes || 0} min`}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="text-end">
+                            <Badge bg={statusBadgeVariant(order.orderStatus)} className="mb-2">{order.orderStatus}</Badge>
+                            <div className="fw-semibold">₹{Number(order.totalAmount || 0).toFixed(2)}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
             </Col>
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">Delay Warning (&gt;=10m)</small><h4 className="mb-0 text-warning">{metrics.delayedWarning}</h4></Card.Body></Card>
-            </Col>
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">Critical Delay (&gt;=20m)</small><h4 className="mb-0 text-danger">{metrics.delayedCritical}</h4></Card.Body></Card>
-            </Col>
-            <Col md={4} lg={3}>
-              <Card><Card.Body><small className="text-muted">Revenue</small><h6 className="mb-0">₹{metrics.totalRevenue.toFixed(2)}</h6></Card.Body></Card>
+
+            <Col lg={5}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Header className="bg-transparent fw-semibold">Quick Actions</Card.Header>
+                <Card.Body className="d-grid gap-2">
+                  <Button as={Link} to="/admin/orders" variant="primary">Review Orders</Button>
+                  <Button as={Link} to="/admin/products" variant="outline-primary">Update Catalog</Button>
+                  <Button as={Link} to="/admin/coupons" variant="outline-dark">Manage Offers</Button>
+                  <Button as={Link} to="/" variant="outline-secondary">Open Customer Store</Button>
+                </Card.Body>
+              </Card>
             </Col>
           </Row>
 
           <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>Recent Orders</span>
+            <Card.Header className="d-flex justify-content-between align-items-center bg-transparent">
+              <span className="fw-semibold">Recent Orders</span>
               <Badge bg="dark">{recentOrders.length}</Badge>
             </Card.Header>
             <Card.Body>
@@ -153,7 +248,7 @@ const AdminDashboard = () => {
                         <tr key={order._id}>
                           <td>#{order._id.slice(-8).toUpperCase()}</td>
                           <td>{order.userId?.name || 'Unknown'}</td>
-                          <td><Badge bg="secondary">{order.orderStatus}</Badge></td>
+                          <td><Badge bg={statusBadgeVariant(order.orderStatus)}>{order.orderStatus}</Badge></td>
                           <td>₹{Number(order.totalAmount || 0).toFixed(2)}</td>
                           <td>{new Date(order.createdAt).toLocaleString()}</td>
                         </tr>
@@ -167,8 +262,8 @@ const AdminDashboard = () => {
 
           <Row className="g-3 mt-1">
             <Col lg={7}>
-              <Card>
-                <Card.Header>Last 7 Days Sales</Card.Header>
+              <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-transparent fw-semibold">Last 7 Days Sales</Card.Header>
                 <Card.Body style={{ height: 320 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={sales}>
@@ -185,8 +280,8 @@ const AdminDashboard = () => {
             </Col>
 
             <Col lg={5}>
-              <Card>
-                <Card.Header>Order Status Mix</Card.Header>
+              <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-transparent fw-semibold">Order Status Mix</Card.Header>
                 <Card.Body style={{ height: 320 }}>
                   {orderStats.length === 0 ? (
                     <div className="text-center text-muted py-5">No data available.</div>
@@ -213,8 +308,8 @@ const AdminDashboard = () => {
             </Col>
           </Row>
 
-          <Card className="mt-3">
-            <Card.Header>Top Products (By Quantity Sold)</Card.Header>
+          <Card className="mt-3 border-0 shadow-sm">
+            <Card.Header className="bg-transparent fw-semibold">Top Products (By Quantity Sold)</Card.Header>
             <Card.Body>
               {productStats.length === 0 ? (
                 <div className="text-center text-muted py-4">No product analytics available.</div>

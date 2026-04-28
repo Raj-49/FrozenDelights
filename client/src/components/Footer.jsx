@@ -5,7 +5,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-dark text-light py-4 mt-5">
+    <footer className="fd-footer py-4 mt-5">
       <Container>
         <Row>
           <Col md={6} className="text-center text-md-start mb-3 mb-md-0">
@@ -13,6 +13,7 @@ const Footer = () => {
             <p className="mb-0 text-muted">
               Your favorite ice cream delivery service
             </p>
+            <small className="text-muted d-block mt-1">Premium ordering experience for customers and admins.</small>
           </Col>
           
           <Col md={6} className="text-center text-md-end">
