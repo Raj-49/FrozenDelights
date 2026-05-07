@@ -22,10 +22,46 @@ FrozenDelights is a full-stack e-commerce platform specialized in ice cream prod
 - 🔐 **Role-Based Access**: Customer, Admin, and Guest role management
 - ⚡ **Real-Time Updates**: Server-Sent Events (SSE) for live notifications
 - 📱 **Responsive Design**: Mobile-first UI with React Bootstrap
+- 🎨 **Theme Support**: Light and dark mode toggle with persistent preferences
+- 🏪 **Admin Layout**: Dedicated admin interface with sidebar navigation and quick actions
+- 📱 **Mobile Navigation**: Bottom navigation bar for easy mobile access
+- 🚀 **Production Ready**: Deployed and live on DigitalOcean
 
 ---
 
-## Tech Stack
+## Recent Improvements (Weeks 13-16)
+
+Following the core functionality completion at Week 12, the final 4 weeks focused on comprehensive UI/UX enhancements and production readiness:
+
+### 🎨 Frontend Quality Uplift
+- **Theme System**: Added light/dark mode toggle with localStorage persistence
+- **Admin Layout**: Dedicated admin interface with sidebar navigation and content area separation
+- **Mobile Navigation**: Bottom navigation bar (Home, Menu, Cart, Account) for improved mobile usability
+- **Enhanced Navbar**: Improved desktop navigation with icons, profile dropdown, and offcanvas menu
+- **Product Cards**: Premium design with better image handling, stock indicators, and hover effects
+- **Checkout Polish**: Clearer order summaries, coupon display, and payment method cards
+- **Order Tracking**: Enhanced live tracking with visual timelines and delivery status
+- **Admin Dashboard**: Operational hierarchy with urgent queue, KPIs, and quick actions
+
+### 🏪 Admin Operations Upgrade
+- **Dashboard Improvements**: Better KPI tiles, urgent order queue, and operational insights
+- **Product Management**: Enhanced CRUD interface with better form layouts and image previews
+- **Coupon Management**: Improved promotional controls with usage tracking
+- **Order Handling**: Streamlined status updates and intervention workflows
+
+### 📱 User Experience Refinements
+- **Customer Journey**: Smoother transitions from browsing to checkout to tracking
+- **Notifications**: Real-time updates with unread count indicators
+- **Profile Management**: Enhanced user profiles with picture upload capabilities
+- **Consistency**: Unified visual language across all screens and interactions
+
+### 🚀 Deployment & Production
+- **Live Deployment**: Successfully deployed on DigitalOcean droplet
+- **Production URL**: [xxx.app](https://xxx.app) (placeholder - update with actual URL)
+- **Validation**: End-to-end testing confirmed stable operation in live environment
+- **Optimization**: Final performance tuning and reliability improvements
+
+These improvements transformed the platform from a functional prototype to a polished, production-ready e-commerce solution.
 
 ### Frontend
 - **Framework**: React 18 + Vite
@@ -64,13 +100,17 @@ FrozenDelights/
 │   │   ├── api/
 │   │   │   └── axios.js                # Axios instance with interceptors
 │   │   ├── components/
-│   │   │   ├── Navbar.jsx              # Top navigation bar
-│   │   │   ├── Footer.jsx              # Footer component
-│   │   │   ├── ProductCard.jsx         # Reusable product card
-│   │   │   └── ProductViewerModal.jsx  # Product detail modal with carousel
+│   │   │   ├── Navbar.jsx              # Enhanced navigation with theme toggle and mobile menu
+│   │   │   ├── Footer.jsx              # Theme-aware footer component
+│   │   │   ├── ProductCard.jsx         # Premium product display with stock indicators
+│   │   │   ├── ProductViewerModal.jsx  # Product detail modal with carousel
+│   │   │   ├── AdminLayout.jsx         # Dedicated admin shell with sidebar
+│   │   │   ├── ThemeToggle.jsx         # Light/dark mode toggle button
+│   │   │   └── InvoiceDownloadBtn.jsx  # Invoice download component
 │   │   ├── context/
 │   │   │   ├── AuthContext.jsx         # User authentication state
-│   │   │   └── CartContext.jsx         # Shopping cart state
+│   │   │   ├── CartContext.jsx         # Shopping cart state
+│   │   │   └── ThemeContext.jsx        # Theme management (light/dark mode)
 │   │   ├── pages/
 │   │   │   ├── user/
 │   │   │   │   └── Home.jsx            # Home page
@@ -92,6 +132,8 @@ FrozenDelights/
 │   │       ├── ProtectedRoute.jsx      # Auth guard for user pages
 │   │       ├── AdminRoute.jsx          # Auth guard for admin pages
 │   │       └── GuestRoute.jsx          # Redirect if already logged in
+│   ├── styles/
+│   │   └── app.css                     # Global theme-aware styles and layout
 │   ├── .env.example                    # Frontend env template
 │   ├── package.json
 │   ├── vite.config.js
@@ -404,25 +446,29 @@ The app will be available at:
 - Product filtering by category, flavor, and size
 - Stock management and availability tracking
 - Search functionality
+- Premium product card design with hover effects
 
 ### 🛒 Shopping Experience
 - Real-time cart management with React Context
 - Product viewer modal with carousel and thumbnails
 - Persistent cart storage (localStorage)
 - Quantity management and price calculation
+- Enhanced checkout flow with coupon support
 
 ### 💳 Payments
 - Razorpay integration for secure payments
 - Payment status tracking and reconciliation
 - Webhook verification and idempotency
 - Order confirmation emails
+- Invoice generation and download
 
 ### 👤 User Management
 - Email/password authentication with bcrypt
 - Google OAuth 2.0 integration
 - Email verification flow
 - Password reset functionality
-- User profile management
+- User profile management with picture upload
+- Theme preference persistence
 
 ### 📧 Notifications
 - Order confirmation emails
@@ -430,6 +476,7 @@ The app will be available at:
 - Delivery status alerts
 - Sign-in alerts (optional)
 - Server-Sent Events for real-time updates
+- Notification center with unread indicators
 
 ### 🖼️ Image Management
 - Cloudinary integration for scalable image hosting
@@ -443,6 +490,14 @@ The app will be available at:
 - Product inventory control
 - User activity analytics
 - Payment reconciliation dashboard
+- Urgent order queue and operational insights
+
+### 🎨 UI/UX Enhancements
+- Light and dark mode theme toggle
+- Mobile-first responsive design with bottom navigation
+- Dedicated admin layout with sidebar navigation
+- Consistent visual hierarchy across all screens
+- Enhanced accessibility and user confidence
 
 ---
 
@@ -469,6 +524,17 @@ npm run build
 ```
 
 **Backend**: No build needed; run with Node.js directly
+
+### Deployment
+
+The application is deployed and live on DigitalOcean at **xxx.app** (update with actual domain).
+
+For production deployment:
+1. Build the frontend: `cd client && npm run build`
+2. Set production environment variables in server/.env
+3. Start the server: `cd server && npm start`
+4. Configure reverse proxy (nginx) for static file serving
+5. Set up SSL certificates for HTTPS
 
 ### Using ngrok for External Testing
 
